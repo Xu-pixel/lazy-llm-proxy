@@ -1,5 +1,6 @@
 import { Elysia, sse, t } from 'elysia'
 import OpenAI from 'openai'
+import { bearer } from '@elysiajs/bearer'
 
 const openai = new OpenAI({
   baseURL: process.env.OPENAI_API_BASE_URL,
@@ -21,8 +22,9 @@ async function* chatSSE(messages: any[]) {
 }
 
 new Elysia()
-  .post('/v1/chat/completions', ({ body,headers }) => {
-    if(headers['authorization'] !== process.env.DOWNSTREAM_KEY) {
+  .use(bearer())
+  .post('/v1/chat/completions', ({ body,headers, bearer }) => {
+    if(bearer !== process.env.DOWNSTREAM_KEY) {
       throw new Error('Unauthorized')
     }
 
