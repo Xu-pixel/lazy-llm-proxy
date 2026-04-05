@@ -19,7 +19,7 @@ RUN bun build \
 	--outfile server \
 	src/index.ts
 
-FROM gcr.nju.edu.cn/distroless/base
+FROM gcr.io/distroless/base
 
 WORKDIR /app
 
