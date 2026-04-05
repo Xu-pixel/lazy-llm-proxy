@@ -19,11 +19,11 @@ metadata:
 
 # lazy-llm-proxy Admin API
 
-Bun + Elysia 构建的 OpenAI API 代理。管理操作通过 `/admin/*` HTTP 接口暴露，使用启动时随机生成的 Admin Token 鉴权（打印在控制台）。
+OpenAI API proxy built with Bun + Elysia. Management is exposed via `/admin/*` HTTP endpoints, authenticated with an Admin Token generated at startup (printed to the console).
 
 ## Auth
 
-所有 `/admin/*` 接口使用 Bearer Token 鉴权，Token 在服务启动时打印到控制台。
+All `/admin/*` endpoints use Bearer token auth. The token is printed to the console when the service starts.
 
 ```
 Authorization: Bearer <ADMIN_TOKEN>
@@ -31,11 +31,11 @@ Authorization: Bearer <ADMIN_TOKEN>
 
 ## Base URL
 
-默认 `http://localhost:5001`，以下示例省略 base URL。
+Default is `http://localhost:5001`. Examples below omit the base URL.
 
 ## Provider API
 
-### 创建 Provider
+### Create a provider
 
 ```bash
 curl -X POST /admin/providers \
@@ -45,19 +45,19 @@ curl -X POST /admin/providers \
 # → {"id":"<uuid>"}
 ```
 
-### 列出所有 Provider
+### List all providers
 
 ```bash
 curl /admin/providers -H "Authorization: Bearer $TOKEN"
 ```
 
-### 获取单个 Provider
+### Get a single provider
 
 ```bash
 curl /admin/providers/:id -H "Authorization: Bearer $TOKEN"
 ```
 
-### 更新 Provider（部分更新）
+### Update a provider (partial)
 
 ```bash
 curl -X PATCH /admin/providers/:id \
@@ -66,13 +66,13 @@ curl -X PATCH /admin/providers/:id \
   -d '{"api_key":"sk-new","models":["gpt-4o","o1"]}'
 ```
 
-### 删除 Provider
+### Delete a provider
 
 ```bash
 curl -X DELETE /admin/providers/:id -H "Authorization: Bearer $TOKEN"
 ```
 
-### 查询 Provider 用量
+### Provider usage
 
 ```bash
 curl /admin/providers/:id/usage -H "Authorization: Bearer $TOKEN"
@@ -81,7 +81,7 @@ curl /admin/providers/:id/usage -H "Authorization: Bearer $TOKEN"
 
 ## ApiKey API
 
-### 签发 ApiKey
+### Issue an ApiKey
 
 ```bash
 curl -X POST /admin/keys \
@@ -99,30 +99,31 @@ curl -X POST /admin/keys \
 # → {"key":"sk-..."}
 ```
 
-字段说明：
-| 字段 | 必填 | 说明 |
-|------|------|------|
-| providers | 是 | 上游 provider ID 数组（至少一个） |
-| token_limit | 否 | token 用量上限，null = 不限 |
-| system_prompt | 否 | 注入的系统提示词 |
-| force_prompt | 否 | true = 强制替换用户的 system prompt |
-| expires_at | 否 | ISO 8601 过期时间，null = 永不过期 |
-| ips | 否 | 允许的 IP 列表，空 = 不限制 |
-| model_names | 否 | 允许的模型名，空 = 不限制 |
+Fields:
 
-### 列出所有 ApiKey
+| Field | Required | Description |
+|------|----------|-------------|
+| providers | Yes | Array of upstream provider IDs (at least one) |
+| token_limit | No | Token usage cap; `null` = unlimited |
+| system_prompt | No | Injected system prompt |
+| force_prompt | No | `true` = replace the user’s system prompt |
+| expires_at | No | ISO 8601 expiry; `null` = never expires |
+| ips | No | Allowed IPs; empty = no restriction |
+| model_names | No | Allowed model names; empty = no restriction |
+
+### List all ApiKeys
 
 ```bash
 curl /admin/keys -H "Authorization: Bearer $TOKEN"
 ```
 
-### 获取单个 ApiKey
+### Get a single ApiKey
 
 ```bash
 curl /admin/keys/:key -H "Authorization: Bearer $TOKEN"
 ```
 
-### 更新 ApiKey（部分更新）
+### Update an ApiKey (partial)
 
 ```bash
 curl -X PATCH /admin/keys/:key \
@@ -131,53 +132,53 @@ curl -X PATCH /admin/keys/:key \
   -d '{"token_limit":200000,"ips":["10.0.0.1","10.0.0.2"]}'
 ```
 
-### 吊销 ApiKey
+### Revoke an ApiKey
 
 ```bash
 curl -X DELETE /admin/keys/:key -H "Authorization: Bearer $TOKEN"
 ```
 
-### 查询 ApiKey 用量
+### ApiKey usage
 
 ```bash
 curl /admin/keys/:key/usage -H "Authorization: Bearer $TOKEN"
 # → {"tokens_used":4200,"token_limit":100000,"detail":[{"model":"gpt-4o","prompt_tokens":...}]}
 ```
 
-### 重置 ApiKey 用量
+### Reset ApiKey usage
 
 ```bash
 curl -X POST /admin/keys/:key/reset-usage -H "Authorization: Bearer $TOKEN"
 ```
 
-### 给 ApiKey 添加 Provider
+### Attach a provider to an ApiKey
 
 ```bash
 curl -X POST /admin/keys/:key/providers/:pid -H "Authorization: Bearer $TOKEN"
 ```
 
-### 从 ApiKey 移除 Provider
+### Detach a provider from an ApiKey
 
 ```bash
 curl -X DELETE /admin/keys/:key/providers/:pid -H "Authorization: Bearer $TOKEN"
 ```
 
-## Common Tasks
+## Common tasks
 
-| 任务 | 请求 |
-|------|------|
-| 加额度到 20 万 | `PATCH /admin/keys/:key` body `{"token_limit":200000}` |
-| 轮换上游密钥 | `PATCH /admin/providers/:id` body `{"api_key":"sk-new"}` |
-| 临时禁用 key | `PATCH /admin/keys/:key` body `{"expires_at":"2000-01-01T00:00:00Z"}` |
-| 重新启用 key | `PATCH /admin/keys/:key` body `{"expires_at":null}` |
-| 限制 IP | `PATCH /admin/keys/:key` body `{"ips":["1.2.3.4"]}` |
-| 解除 IP 限制 | `PATCH /admin/keys/:key` body `{"ips":[]}` |
-| 切换 provider | `DELETE /admin/keys/:key/providers/:old` 然后 `POST /admin/keys/:key/providers/:new` |
-| 查剩余额度 | `GET /admin/keys/:key/usage` 看 `token_limit - tokens_used` |
+| Task | Request |
+|------|---------|
+| Raise quota to 200k | `PATCH /admin/keys/:key` body `{"token_limit":200000}` |
+| Rotate upstream API key | `PATCH /admin/providers/:id` body `{"api_key":"sk-new"}` |
+| Temporarily disable key | `PATCH /admin/keys/:key` body `{"expires_at":"2000-01-01T00:00:00Z"}` |
+| Re-enable key | `PATCH /admin/keys/:key` body `{"expires_at":null}` |
+| Restrict by IP | `PATCH /admin/keys/:key` body `{"ips":["1.2.3.4"]}` |
+| Remove IP restriction | `PATCH /admin/keys/:key` body `{"ips":[]}` |
+| Switch provider | `DELETE /admin/keys/:key/providers/:old` then `POST /admin/keys/:key/providers/:new` |
+| Check remaining quota | `GET /admin/keys/:key/usage` — compare `token_limit` vs `tokens_used` |
 
-## Chat Proxy
+## Chat proxy
 
-下游客户端使用签发的 ApiKey 调用标准 OpenAI 接口：
+Downstream clients call the standard OpenAI API with an issued ApiKey:
 
 ```bash
 curl -X POST /v1/chat/completions \
@@ -186,4 +187,4 @@ curl -X POST /v1/chat/completions \
   -d '{"model":"gpt-4o","stream":true,"messages":[{"role":"user","content":"hello"}]}'
 ```
 
-支持 `messages`（标准格式）和 `dialogue`（兼容旧格式），支持 stream/非 stream。
+Supports `messages` (standard) and `dialogue` (legacy). Streaming and non-streaming are supported.

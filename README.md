@@ -29,17 +29,17 @@ Repo: [github.com/Xu-pixel/lazy-llm-proxy](https://github.com/Xu-pixel/lazy-llm-
 
 ### Docker
 
-依赖 **Redis**（缓存与计数）和本镜像；SQLite 数据落在仓库里的 `db/data.db`，通过卷持久化。
+Requires **Redis** (cache and counters) and this image; SQLite data lives at `db/data.db` in the repo and is persisted via a volume.
 
-**1. 启动 Redis**
+**1. Start Redis**
 
 ```bash
 docker run -d --name lazy-llm-redis -p 6379:6379 redis:7-alpine
 ```
 
-**2. 构建并运行本服务**
+**2. Build and run this service**
 
-在项目根目录执行（先 `mkdir -p db`）：
+From the project root (run `mkdir -p db` first):
 
 ```bash
 docker build -t lazy-llm-proxy .
@@ -50,10 +50,10 @@ docker run --rm -p 5001:5001 \
   lazy-llm-proxy
 ```
 
-- **`-v "$(pwd)/db:/app/db"`**：把宿主机的 `./db` 挂到容器内工作目录下的 `db`，与代码中的 `db/data.db` 一致。
-- **`REDIS_URL`**：容器访问宿主机上的 Redis 时，macOS / Windows 可用 `host.docker.internal`；Linux 上可改为宿主机 IP，或把 Redis 与代理放在同一 Docker 网络里，例如 `redis://redis:6379`（见下方）。
+- **`-v "$(pwd)/db:/app/db"`**: Mounts host `./db` to `db` inside the container, matching `db/data.db` in the app.
+- **`REDIS_URL`**: On macOS / Windows, `host.docker.internal` reaches Redis on the host. On Linux, use the host IP or put Redis and the proxy on the same Docker network, e.g. `redis://redis:6379` (see below).
 
-**同一 Docker 网络（推荐 Linux 或不想用 host 网关时）**
+**Same Docker network (recommended on Linux or when you prefer not to use the host gateway)**
 
 ```bash
 docker network create lazy-llm-net
@@ -68,7 +68,7 @@ docker run --rm --network lazy-llm-net -p 5001:5001 \
   lazy-llm-proxy
 ```
 
-服务监听 **`http://localhost:5001`**。Admin Token 在容器日志里打印一次（`docker logs`）。
+The service listens on **`http://localhost:5001`**. The Admin Token is printed once in the container logs (`docker logs`).
 
 ---
 
