@@ -29,7 +29,7 @@ Repo: [github.com/Xu-pixel/lazy-llm-proxy](https://github.com/Xu-pixel/lazy-llm-
 
 ### Docker
 
-Requires **Redis** (cache and counters) and this image; SQLite data lives at `db/data.db` in the repo and is persisted via a volume.
+Requires **Redis** (cache and counters) and this image; SQLite data lives at `db/data.db` and is persisted via a volume.
 
 **1. Start Redis**
 
@@ -37,21 +37,26 @@ Requires **Redis** (cache and counters) and this image; SQLite data lives at `db
 docker run -d --name lazy-llm-redis -p 6379:6379 redis:7-alpine
 ```
 
-**2. Build and run this service**
+**2. Pull from GHCR and run**
 
-From the project root (run `mkdir -p db` first):
+Prebuilt images are published to GitHub Container Registry:
 
 ```bash
-docker build -t lazy-llm-proxy .
+docker pull ghcr.io/xu-pixel/lazy-llm-proxy:latest
+```
 
+From a directory where you want SQLite files (run `mkdir -p db` first):
+
+```bash
 docker run --rm -p 5001:5001 \
   -e REDIS_URL=redis://host.docker.internal:6379 \
   -v "$(pwd)/db:/app/db" \
-  lazy-llm-proxy
+  ghcr.io/xu-pixel/lazy-llm-proxy:latest
 ```
 
-- **`-v "$(pwd)/db:/app/db"`**: Mounts host `./db` to `db` inside the container, matching `db/data.db` in the app.
-- **`REDIS_URL`**: On macOS / Windows, `host.docker.internal` reaches Redis on the host. On Linux, use the host IP or put Redis and the proxy on the same Docker network, e.g. `redis://redis:6379` (see below).
+- `**-v "$(pwd)/db:/app/db"**`: Mounts host `./db` to `db` inside the container, matching `db/data.db` in the app.
+- `**REDIS_URL**`: On macOS / Windows, `host.docker.internal` reaches Redis on the host. On Linux, use the host IP or put Redis and the proxy on the same Docker network, e.g. `redis://lazy-llm-redis:6379` (see below).
+- If the package is **private**, run `docker login ghcr.io` first (use a GitHub PAT with `read:packages`).
 
 **Same Docker network (recommended on Linux or when you prefer not to use the host gateway)**
 
@@ -60,15 +65,25 @@ docker network create lazy-llm-net
 
 docker run -d --name lazy-llm-redis --network lazy-llm-net -p 6379:6379 redis:7-alpine
 
-docker build -t lazy-llm-proxy .
-
 docker run --rm --network lazy-llm-net -p 5001:5001 \
   -e REDIS_URL=redis://lazy-llm-redis:6379 \
+  -v "$(pwd)/db:/app/db" \
+  ghcr.io/xu-pixel/lazy-llm-proxy:latest
+```
+
+**Build from source (optional)**
+
+From the repo root:
+
+```bash
+docker build -t lazy-llm-proxy .
+docker run --rm -p 5001:5001 \
+  -e REDIS_URL=redis://host.docker.internal:6379 \
   -v "$(pwd)/db:/app/db" \
   lazy-llm-proxy
 ```
 
-The service listens on **`http://localhost:5001`**. The Admin Token is printed once in the container logs (`docker logs`).
+The service listens on `**http://localhost:5001**`. The Admin Token is printed once in the container logs (`docker logs`).
 
 ---
 
@@ -79,7 +94,7 @@ bun install
 bun run dev
 ```
 
-Listens on **`http://localhost:5001`**. Chat proxy: `POST /v1/chat/completions` with a downstream key. Admin API: `GET/POST/PATCH/DELETE /admin/*` with the **Admin token** printed once at startup (`Authorization: Bearer …`).
+Listens on `**http://localhost:5001**`. Chat proxy: `POST /v1/chat/completions` with a downstream key. Admin API: `GET/POST/PATCH/DELETE /admin/*` with the **Admin token** printed once at startup (`Authorization: Bearer …`).
 
 ---
 
