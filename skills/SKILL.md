@@ -3,7 +3,7 @@ name: lazy-llm-proxy
 description: Manage lazy-llm-proxy via its Admin HTTP API — create/revoke API keys, add/remove upstream providers, set token quotas, query usage stats, and configure IP allowlists and system prompts. Use when the user wants to manage LLM proxy configuration through API calls.
 metadata:
   author: lazy-llm-proxy
-  version: "2.0.0"
+  version: "2.1.0"
   promptSignals:
     phrases:
       - "proxy"
@@ -15,6 +15,7 @@ metadata:
       - "upstream"
       - "downstream"
       - "admin api"
+      - "docker"
 ---
 
 # lazy-llm-proxy Admin API
@@ -32,6 +33,55 @@ Authorization: Bearer <ADMIN_TOKEN>
 ## Base URL
 
 Default is `http://localhost:5001`. Examples below omit the base URL.
+
+## Run with Docker
+
+Requires **Redis** (cache and counters) and a persistent **`db/`** directory for SQLite (`db/data.db`).
+
+**1. Start Redis**
+
+```bash
+docker run -d --name lazy-llm-redis -p 6379:6379 redis:7-alpine
+```
+
+**2. Run the proxy (prebuilt image from GHCR)**
+
+```bash
+mkdir -p db
+docker pull ghcr.io/xu-pixel/lazy-llm-proxy:latest
+
+docker run --rm -p 5001:5001 \
+  -e REDIS_URL=redis://host.docker.internal:6379 \
+  -v "$(pwd)/db:/app/db" \
+  ghcr.io/xu-pixel/lazy-llm-proxy:latest
+```
+
+- **`-v "$(pwd)/db:/app/db"`** — mounts host `./db` so SQLite survives container restarts.
+- **`REDIS_URL`** — on macOS / Windows, `host.docker.internal` reaches Redis on the host. On Linux, use the host IP or a shared Docker network (see below). If the GHCR image is private, run `docker login ghcr.io` first (GitHub PAT with `read:packages`).
+
+**Same Docker network (Linux-friendly)**
+
+```bash
+docker network create lazy-llm-net
+docker run -d --name lazy-llm-redis --network lazy-llm-net -p 6379:6379 redis:7-alpine
+mkdir -p db
+docker run --rm --network lazy-llm-net -p 5001:5001 \
+  -e REDIS_URL=redis://lazy-llm-redis:6379 \
+  -v "$(pwd)/db:/app/db" \
+  ghcr.io/xu-pixel/lazy-llm-proxy:latest
+```
+
+**Build from the repo root (optional)**
+
+```bash
+docker build -t lazy-llm-proxy .
+docker run --rm -p 5001:5001 \
+  -e REDIS_URL=redis://host.docker.internal:6379 \
+  -v "$(pwd)/db:/app/db" \
+  lazy-llm-proxy
+```
+
+The service listens on **`http://localhost:5001`**. The **Admin Token** is printed once in the container logs — use `docker logs <container_id>` (or omit `--rm` and inspect logs for the detached container).
 
 ## Provider API
 
