@@ -42,4 +42,4 @@ package-lock.json
 **/*.bun
 
 .env
-db/*db*
+lazy-llm-proxy-db/

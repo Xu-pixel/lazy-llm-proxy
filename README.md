@@ -33,7 +33,7 @@ Repo: [github.com/Xu-pixel/lazy-llm-proxy](https://github.com/Xu-pixel/lazy-llm-
 
 ### Docker
 
-Requires **Redis** (cache and counters) and this image; SQLite data lives at `db/data.db` and is persisted via a volume.
+Requires **Redis** (cache and counters) and this image; SQLite data lives at `lazy-llm-proxy-db/lazy-llm-proxy.db` and is persisted via a volume.
 
 **1. Start Redis**
 
@@ -49,16 +49,16 @@ Prebuilt images are published to GitHub Container Registry:
 docker pull ghcr.io/xu-pixel/lazy-llm-proxy:latest
 ```
 
-From a directory where you want SQLite files (run `mkdir -p db` first):
+From a directory where you want SQLite files (run `mkdir -p lazy-llm-proxy-db` first):
 
 ```bash
 docker run --rm -p 5001:5001 \
   -e REDIS_URL=redis://host.docker.internal:6379 \
-  -v "$(pwd)/db:/app/db" \
+  -v "$(pwd)/lazy-llm-proxy-db:/app/lazy-llm-proxy-db" \
   ghcr.io/xu-pixel/lazy-llm-proxy:latest
 ```
 
-- `**-v "$(pwd)/db:/app/db"**`: Mounts host `./db` to `db` inside the container, matching `db/data.db` in the app.
+- `**-v "$(pwd)/lazy-llm-proxy-db:/app/lazy-llm-proxy-db"**`: Mounts host `./lazy-llm-proxy-db` into the container at the same path, matching `lazy-llm-proxy-db/lazy-llm-proxy.db` in the app.
 - `**REDIS_URL**`: On macOS / Windows, `host.docker.internal` reaches Redis on the host. On Linux, use the host IP or put Redis and the proxy on the same Docker network, e.g. `redis://lazy-llm-redis:6379` (see below).
 - If the package is **private**, run `docker login ghcr.io` first (use a GitHub PAT with `read:packages`).
 
@@ -71,7 +71,7 @@ docker run -d --name lazy-llm-redis --network lazy-llm-net -p 6379:6379 redis:7-
 
 docker run --rm --network lazy-llm-net -p 5001:5001 \
   -e REDIS_URL=redis://lazy-llm-redis:6379 \
-  -v "$(pwd)/db:/app/db" \
+  -v "$(pwd)/lazy-llm-proxy-db:/app/lazy-llm-proxy-db" \
   ghcr.io/xu-pixel/lazy-llm-proxy:latest
 ```
 
@@ -83,7 +83,7 @@ From the repo root:
 docker build -t lazy-llm-proxy .
 docker run --rm -p 5001:5001 \
   -e REDIS_URL=redis://host.docker.internal:6379 \
-  -v "$(pwd)/db:/app/db" \
+  -v "$(pwd)/lazy-llm-proxy-db:/app/lazy-llm-proxy-db" \
   lazy-llm-proxy
 ```
 

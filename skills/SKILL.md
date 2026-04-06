@@ -3,7 +3,7 @@ name: lazy-llm-proxy
 description: Manage lazy-llm-proxy via its Admin HTTP API — create/revoke API keys, add/remove upstream providers, set token quotas, query usage stats, and configure IP allowlists and system prompts. Use when the user wants to manage LLM proxy configuration through API calls.
 metadata:
   author: lazy-llm-proxy
-  version: "2.1.0"
+  version: "2.2.0"
   promptSignals:
     phrases:
       - "proxy"
@@ -36,7 +36,7 @@ Default is `http://localhost:5001`. Examples below omit the base URL.
 
 ## Run with Docker
 
-Requires **Redis** (cache and counters) and a persistent **`db/`** directory for SQLite (`db/data.db`).
+Requires **Redis** (cache and counters) and a persistent **`lazy-llm-proxy-db/`** directory for SQLite (`lazy-llm-proxy-db/lazy-llm-proxy.db`).
 
 **1. Start Redis**
 
@@ -47,16 +47,16 @@ docker run -d --name lazy-llm-redis -p 6379:6379 redis:7-alpine
 **2. Run the proxy (prebuilt image from GHCR)**
 
 ```bash
-mkdir -p db
+mkdir -p lazy-llm-proxy-db
 docker pull ghcr.io/xu-pixel/lazy-llm-proxy:latest
 
 docker run --rm -p 5001:5001 \
   -e REDIS_URL=redis://host.docker.internal:6379 \
-  -v "$(pwd)/db:/app/db" \
+  -v "$(pwd)/lazy-llm-proxy-db:/app/lazy-llm-proxy-db" \
   ghcr.io/xu-pixel/lazy-llm-proxy:latest
 ```
 
-- **`-v "$(pwd)/db:/app/db"`** — mounts host `./db` so SQLite survives container restarts.
+- **`-v "$(pwd)/lazy-llm-proxy-db:/app/lazy-llm-proxy-db"`** — mounts host `./lazy-llm-proxy-db` so SQLite survives container restarts.
 - **`REDIS_URL`** — on macOS / Windows, `host.docker.internal` reaches Redis on the host. On Linux, use the host IP or a shared Docker network (see below). If the GHCR image is private, run `docker login ghcr.io` first (GitHub PAT with `read:packages`).
 
 **Same Docker network (Linux-friendly)**
@@ -64,10 +64,10 @@ docker run --rm -p 5001:5001 \
 ```bash
 docker network create lazy-llm-net
 docker run -d --name lazy-llm-redis --network lazy-llm-net -p 6379:6379 redis:7-alpine
-mkdir -p db
+mkdir -p lazy-llm-proxy-db
 docker run --rm --network lazy-llm-net -p 5001:5001 \
   -e REDIS_URL=redis://lazy-llm-redis:6379 \
-  -v "$(pwd)/db:/app/db" \
+  -v "$(pwd)/lazy-llm-proxy-db:/app/lazy-llm-proxy-db" \
   ghcr.io/xu-pixel/lazy-llm-proxy:latest
 ```
 
@@ -77,7 +77,7 @@ docker run --rm --network lazy-llm-net -p 5001:5001 \
 docker build -t lazy-llm-proxy .
 docker run --rm -p 5001:5001 \
   -e REDIS_URL=redis://host.docker.internal:6379 \
-  -v "$(pwd)/db:/app/db" \
+  -v "$(pwd)/lazy-llm-proxy-db:/app/lazy-llm-proxy-db" \
   lazy-llm-proxy
 ```
 

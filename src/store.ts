@@ -1,6 +1,9 @@
+import { mkdirSync } from "node:fs";
 import { Database } from "bun:sqlite";
 
-const db = new Database('db/data.db', { strict: true });
+const DB_PATH = "lazy-llm-proxy-db/lazy-llm-proxy.db";
+mkdirSync("lazy-llm-proxy-db", { recursive: true });
+const db = new Database(DB_PATH, { strict: true });
 db.run("PRAGMA journal_mode = WAL");
 
 db.run(`CREATE TABLE IF NOT EXISTS providers (
