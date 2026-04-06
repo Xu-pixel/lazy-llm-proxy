@@ -43,7 +43,7 @@ docker run -d --name lazy-llm-redis -p 6379:6379 redis:7-alpine
 
 **2. Pull from GHCR and run**
 
-Prebuilt images are published to GitHub Container Registry:
+Prebuilt images are published to GitHub Container Registry. **Multi-arch** `linux/amd64` and `linux/arm64` are built in CI (GitHub Actions), so you do not need to cross-build locally from an ARM Mac.
 
 ```bash
 docker pull ghcr.io/xu-pixel/lazy-llm-proxy:latest
