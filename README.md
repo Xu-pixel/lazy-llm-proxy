@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="icon.png" width="128" alt="lazy-llm-proxy" />
+</div>
+
 # lazy-llm-proxy
 
 **Let your agent run the show. we don't need a complicated panel** A fast, headless OpenAI-compatible proxy where **agents manage providers, keys, quotas, and usage** over a clean HTTP API—no dashboard required. Spin up upstreams (OpenAI, OpenRouter-style bases, or your own gateway), mint downstream keys, and tweak limits on the fly from scripts or Cursor.
