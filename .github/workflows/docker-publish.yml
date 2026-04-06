@@ -43,6 +43,8 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
             type=sha
 
+      # Provenance/SBOM attestations default to on in newer buildx; pushing them to GHCR
+      # often returns 403 on blob HEAD unless extra OIDC setup — image layers do not need them.
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -51,5 +53,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+          sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
