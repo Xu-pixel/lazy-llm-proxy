@@ -41,4 +41,5 @@ yarn-error.log*
 package-lock.json
 **/*.bun
 lazy-llm-proxy-db
+lazy-llm-sessions
 .env
