@@ -3,6 +3,7 @@ import OpenAI from 'openai'
 import { bearer } from '@elysiajs/bearer'
 
 const FALLBACK_ERROR = 'model internal error'
+const enableThinking = process.env.ENABLE_THINKING === 'true'
 
 const openai = new OpenAI({
   baseURL: process.env.OPENAI_API_BASE_URL,
@@ -19,15 +20,22 @@ class ModelInternalError extends Error {
   }
 }
 
+function completionParams(messages: any[], stream: boolean) {
+  return {
+    model: process.env.OPENAI_API_MODEL!,
+    messages,
+    stream,
+    chat_template_kwargs: { enable_thinking: enableThinking },
+  }
+}
+
 // 把 OpenAI 的流包装成 SSE 
 async function* chatSSE(messages: any[]) {
   console.log("call openai api")
   try {
-    const stream = await openai.chat.completions.create({
-      model: process.env.OPENAI_API_MODEL!,
-      stream: true,
-      messages
-    })
+    const stream = await openai.chat.completions.create(
+      completionParams(messages, true) as any,
+    ) as unknown as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>
     for await (const chunk of stream) {
       yield chunk
     }
@@ -74,10 +82,9 @@ new Elysia()
       return sse(chatSSE(messages))
     }
     try {
-      return await openai.chat.completions.create({
-        model: process.env.OPENAI_API_MODEL!,
-        messages,
-      })
+      return await openai.chat.completions.create(
+        completionParams(messages, false) as any,
+      )
     } catch (err) {
       console.error(err)
       throw new ModelInternalError()
